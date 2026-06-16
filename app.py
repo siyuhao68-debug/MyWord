@@ -8,8 +8,8 @@ from io import BytesIO
 
 # ================= 🔧 填入你的有道 API 密钥 =================
 # 注册有道智云(ai.youdao.com) 文本翻译服务后获取
-YOUDAO_APP_KEY = "4acc4001d0251d01" 
-YOUDAO_APP_SECRET = "NnHTR34a0bcuU8frJin80rYoG7yuACoA"
+YOUDAO_APP_KEY = st.secrets["YOUDAO_APP_KEY"] 
+YOUDAO_APP_SECRET = st.secrets["YOUDAO_APP_SECRET"]
 # =========================================================
 
 st.set_page_config(page_title="背单词助手", page_icon="⭐")
