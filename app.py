@@ -15,7 +15,7 @@ YOUDAO_APP_SECRET = st.secrets["YOUDAO_APP_SECRET"]
 
 st.set_page_config(page_title="背单词助手", page_icon="⭐")
 st.title("⭐ 背单词助手")
-st.write("数据直接持久化写入服务器【JSON 文件数据库】中，体验最纯正的后端存储逻辑！")
+st.write("单词将永久存入服务器【JSON文件数据库】中！")
 
 # 📂 定义服务器本地文件数据库的路径
 DB_FILE = "words_json_db.json"
@@ -99,7 +99,7 @@ if search_query:
 # 📊 展现与导出表格
 if st.session_state.word_list:
     st.write("---")
-    st.subheader("📊 我的永久单词本 (文件冷存储状态)")
+    st.subheader("📊 我的永久单词本")
     df = pd.DataFrame(st.session_state.word_list)
     st.dataframe(df)
     
