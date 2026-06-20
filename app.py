@@ -15,7 +15,7 @@ YOUDAO_APP_SECRET = st.secrets["YOUDAO_APP_SECRET"]
 
 st.set_page_config(page_title="背单词助手", page_icon="⭐")
 st.title("⭐ 背单词助手")
-st.write("单词将永久存入服务器【JSON文件数据库】中！")
+st.write("单词将永久存入【JSON文件数据库】中！")
 
 # 📂 定义服务器本地文件数据库的路径
 DB_FILE = "words_json_db.json"
@@ -68,7 +68,7 @@ def fetch_translation(query):
         return None
 
 # 📥 界面输入
-search_query = st.text_input("🔍 输入你想查询/记录的单词或中文（输完敲回车）：")
+search_query = st.text_input("🔍 输入你想查询的单词或中文（输完敲回车）：")
 
 if search_query:
     with st.spinner("正在安全连接有道服务器..."):
