@@ -5,8 +5,8 @@ import hashlib
 import time
 import random
 import json
+import os
 from io import BytesIO
-from streamlit_local_storage import LocalStorage
 
 # ================= 🔧 自动读取 Streamlit 里的有道 API 密钥 =================
 YOUDAO_APP_KEY = st.secrets["YOUDAO_APP_KEY"] 
@@ -15,21 +15,36 @@ YOUDAO_APP_SECRET = st.secrets["YOUDAO_APP_SECRET"]
 
 st.set_page_config(page_title="背单词助手", page_icon="⭐")
 st.title("⭐ 背单词助手")
-st.write("输入英文或中文，系统自动查询并【永久保存】在你的当前设备中！")
+st.write("数据直接持久化写入服务器【JSON 文件数据库】中，体验最纯正的后端存储逻辑！")
 
-# 🔒 初始化浏览器本地缓存大管家
-local_storage = LocalStorage()
+# 📂 定义服务器本地文件数据库的路径
+DB_FILE = "words_json_db.json"
 
-# 从手机/电脑的浏览器缓存中加载已经保存的单词
-stored_words_raw = local_storage.getItem("my_permanent_words")
-if stored_words_raw:
+# 🛠️ 核心函数 1：从 JSON 文件中读取数据
+def load_data_from_db():
+    if os.path.exists(DB_FILE):
+        try:
+            with open(DB_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            st.error(f"读取数据库失败: {e}")
+            return []
+    return []
+
+# 🛠️ 核心函数 2：将数据安全写入 JSON 文件
+def save_data_to_db(data_list):
     try:
-        # 浏览器里存的是字符串，我们需要反序列化为 Python 列表
-        st.session_state.word_list = json.loads(stored_words_raw)
-    except:
-        st.session_state.word_list = []
-else:
-    st.session_state.word_list = []
+        with open(DB_FILE, "w", encoding="utf-8") as f:
+            # ensure_ascii=False 保证中文不会变成乱码
+            json.dump(data_list, f, ensure_ascii=False, indent=4)
+        return True
+    except Exception as e:
+        st.error(f"写入数据库失败: {e}")
+        return False
+
+# 🔄 初始化加载：每次刷新网页，直接去硬盘文件里捞数据
+if "word_list" not in st.session_state:
+    st.session_state.word_list = load_data_from_db()
 
 # 🧠 定义有道翻译的函数（保持不变）
 def fetch_translation(query):
@@ -63,34 +78,37 @@ if search_query:
         st.info(f"💡 自动查询结果：{translated_result}")
         example = st.text_area("💡 添加自定义例句（可选）：", key="example_input")
         
-        if st.button("确认将此单词加入持久化仓库"):
+        if st.button("确认将此单词加入永久文件数据库"):
             is_english = search_query.isascii()
             new_data = {
                 "单词/原文": search_query if is_english else translated_result,
                 "中文释义": translated_result if is_english else search_query,
                 "例句": example
             }
-            # 把新单词加进列表
-            st.session_state.word_list.append(new_data)
             
-            # 💾 核心步骤：将最新的列表转成字符串，强制写入浏览器的本地保险箱
-            local_storage.setItem("my_permanent_words", json.dumps(st.session_state.word_list))
+            # 先读出最新的，防冲突
+            current_list = load_data_from_db()
+            current_list.append(new_data)
             
-            st.success(f"已成功写入本地持久化仓库！网页刷新也不会丢了！")
-            st.rerun() # 刷新页面展示新数据
+            # 💾 核心落盘操作：强行写入硬盘文件
+            if save_data_to_db(current_list):
+                st.session_state.word_list = current_list
+                st.success(f"已成功落盘！数据已写入服务器安全区。")
+                st.rerun()
 
 # 📊 展现与导出表格
 if st.session_state.word_list:
     st.write("---")
-    st.subheader("📊 我的永久单词本")
+    st.subheader("📊 我的永久单词本 (文件冷存储状态)")
     df = pd.DataFrame(st.session_state.word_list)
     st.dataframe(df)
     
-    # 增加一个清空水池的按钮（防止垃圾数据太多）
-    if st.button("🚨 清空所有本地记录"):
-        local_storage.setItem("my_permanent_words", "[]")
-        st.success("本地缓存已安全擦除！")
-        st.rerun()
+    # 💥 一键擦除数据库文件数据
+    if st.button("🚨 销毁并清空云端数据库"):
+        if save_data_to_db([]):
+            st.session_state.word_list = []
+            st.success("数据已彻底粉碎性擦除！")
+            st.rerun()
         
     buffer = BytesIO()
     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
